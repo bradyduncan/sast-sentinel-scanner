@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+*.test.js
+__fixtures__
+__tests__
+Readme.md
+.env
+.env.*
+coverage
