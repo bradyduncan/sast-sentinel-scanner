@@ -53,14 +53,23 @@ terraform init
 terraform apply
 terraform output  # copy state_bucket / lock_table / region into envs/dev/backend.tf
 
-# 2. Deploy the dev environment.
-cd ../envs/dev
+# 2. Install Lambda runtime dependencies so they're bundled into the deploy zip.
+#    fetch-code and post-comment need @octokit/rest, @octokit/app, and tar at
+#    runtime; only the AWS SDK is preinstalled in the Lambda runtime.
+cd ../../lambda/fetch-code && npm install --omit=dev
+cd ../post-comment && npm install --omit=dev
+
+# 3. Deploy the dev environment.
+cd ../../infrastructure/envs/dev
 terraform init
 terraform apply
 
-# 3. Build and push the scanner image.
+# 4. Build and push the scanner image.
+#    --platform linux/amd64 is required: Fargate runs amd64 containers,
+#    but `docker build` defaults to your host's CPU architecture
+#    (linux/arm64 on Apple Silicon and Windows-on-ARM), which Fargate cannot pull.
 cd ../../..
-docker build -f docker/Dockerfile -t sast-scanner:dev sast/backend
+docker build --platform linux/amd64 -f docker/Dockerfile -t sast-scanner:dev sast/backend
 aws ecr get-login-password --region us-east-1 \
   | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
 docker tag sast-scanner:dev <account>.dkr.ecr.us-east-1.amazonaws.com/sast-sentinel-scanner:latest
