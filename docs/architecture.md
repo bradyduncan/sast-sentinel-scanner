@@ -1,6 +1,6 @@
 # Architecture
 
-_TODO (Week 0): drop the architecture diagram image here and add a paragraph-per-component explainer._
+_TODO: drop the architecture diagram image here and add a paragraph-per-component explainer._
 
 ## Component summary
 

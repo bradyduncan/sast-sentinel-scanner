@@ -6,3 +6,6 @@ node_modules/
 *.tfstate
 *.tfstate.backup
 .terraform/
+
+# Terraform build artifacts (archive_file zip outputs etc.)
+.build/
