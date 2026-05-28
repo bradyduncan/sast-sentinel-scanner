@@ -1,13 +1,9 @@
-# Remote state config. Run `infrastructure/bootstrap` first to create the
-# S3 bucket and DynamoDB lock table, then copy its outputs into the values
-# below and remove the comments.
-#
-# terraform {
-#   backend "s3" {
-#     bucket         = "<state_bucket from bootstrap output>"
-#     key            = "envs/dev/terraform.tfstate"
-#     region         = "<region from bootstrap output>"
-#     dynamodb_table = "<lock_table from bootstrap output>"
-#     encrypt        = true
-#   }
-# }
+terraform {
+  backend "s3" {
+    bucket         = "sast-sentinel-tf-state-241044209804"
+    key            = "envs/dev/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "sast-sentinel-tf-lock"
+    encrypt        = true
+  }
+}
