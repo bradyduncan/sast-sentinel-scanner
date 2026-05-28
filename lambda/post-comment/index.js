@@ -9,6 +9,7 @@
 //   format failure comment, post. Status stays FAILED.
 
 import { App } from "@octokit/app";
+import { Octokit } from "@octokit/rest";
 import {
   DynamoDBClient,
   GetItemCommand,
@@ -60,6 +61,7 @@ async function getGitHubApp() {
   cachedApp = appFactory({
     appId: process.env.GITHUB_APP_ID,
     privateKey: cachedPrivateKey,
+    Octokit,
   });
   return cachedApp;
 }
