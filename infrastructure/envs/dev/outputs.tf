@@ -52,3 +52,8 @@ output "scanner_task_family" {
   description = "Task definition family name (use revision-less :latest pattern in Step Functions)."
   value       = aws_ecs_task_definition.scanner.family
 }
+
+output "high_severity_topic_arn" {
+  description = "ARN of the SNS topic published to on HIGH-severity scan results."
+  value       = aws_sns_topic.high_severity.arn
+}

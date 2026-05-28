@@ -9,3 +9,9 @@ variable "project_name" {
   type        = string
   default     = "sast-sentinel"
 }
+
+variable "alert_email" {
+  description = "Email address subscribed to the HIGH-severity SNS topic. Leave empty to skip the subscription (add manually in the console)."
+  type        = string
+  default     = ""
+}
