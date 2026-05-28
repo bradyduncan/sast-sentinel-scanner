@@ -9,3 +9,8 @@ node_modules/
 
 # Terraform build artifacts (archive_file zip outputs etc.)
 .build/
+
+# Terraform debug / trace logs (TF_LOG output)
+*.log
+crash.log
+crash.*.log
