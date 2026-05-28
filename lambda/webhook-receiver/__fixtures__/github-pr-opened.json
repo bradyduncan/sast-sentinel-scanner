@@ -1,0 +1,28 @@
+{
+  "action": "opened",
+  "number": 42,
+  "pull_request": {
+    "number": 42,
+    "title": "Add new feature",
+    "head": {
+      "sha": "abc1234567890abcdef1234567890abcdef12345",
+      "ref": "feature-branch"
+    },
+    "base": {
+      "ref": "main"
+    }
+  },
+  "repository": {
+    "name": "claude-code",
+    "owner": {
+      "login": "anthropics"
+    },
+    "full_name": "anthropics/claude-code"
+  },
+  "installation": {
+    "id": 12345
+  },
+  "sender": {
+    "login": "test-user"
+  }
+}
