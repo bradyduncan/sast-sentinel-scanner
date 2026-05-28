@@ -37,3 +37,18 @@ output "smoke_url" {
   description = "Invoke URL for the smoke Lambda. curl <url>/smoke to exercise Lambda → DynamoDB."
   value       = "${aws_apigatewayv2_api.smoke.api_endpoint}/smoke"
 }
+
+output "ecs_cluster_arn" {
+  description = "ARN of the ECS cluster Fargate tasks run in."
+  value       = aws_ecs_cluster.sast.arn
+}
+
+output "scanner_task_definition_arn" {
+  description = "ARN of the latest scanner task definition revision."
+  value       = aws_ecs_task_definition.scanner.arn
+}
+
+output "scanner_task_family" {
+  description = "Task definition family name (use revision-less :latest pattern in Step Functions)."
+  value       = aws_ecs_task_definition.scanner.family
+}
