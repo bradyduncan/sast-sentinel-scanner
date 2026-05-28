@@ -115,16 +115,19 @@ The scanner runs end-to-end without Step Functions by manually invoking the task
 | Component | State |
 |---|---|
 | Terraform remote state backend | deployed |
-| DynamoDB jobs table | deployed |
+| DynamoDB jobs table (+ delivery-id GSI) | deployed |
 | S3 staging + results buckets | deployed |
 | ECR scanner repo + image | deployed |
-| Secrets Manager placeholders | deployed |
+| Secrets Manager (webhook secret + GitHub App private key) | deployed, populated |
 | Smoke Lambda + API Gateway | deployed |
 | Fargate cluster + task definition | deployed, smoke-tested end-to-end |
-| Step Functions state machine | not started |
-| Real webhook-receiver / fetch-code / post-comment Lambdas | not deployed |
-| SNS topic + email alert | not started |
-| GitHub App registration | not started |
+| Step Functions state machine | deployed |
+| fetch-code Lambda | deployed |
+| post-comment Lambda | deployed |
+| SNS topic + email alert | deployed |
+| webhook-receiver Lambda + `POST /webhook` route | deployed, **awaiting end-to-end test** |
+| GitHub App registration | registered under `sast-sentinel-scanner` GitHub org |
+| End-to-end PR test against a real repo | **not yet performed** |
 
 ## Notes on the deployment account
 
