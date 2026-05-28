@@ -125,9 +125,9 @@ The scanner runs end-to-end without Step Functions by manually invoking the task
 | fetch-code Lambda | deployed |
 | post-comment Lambda | deployed |
 | SNS topic + email alert | deployed |
-| webhook-receiver Lambda + `POST /webhook` route | deployed, **awaiting end-to-end test** |
+| webhook-receiver Lambda + `POST /webhook` route | deployed, tested on `sast-sentinel-scanner` GitHub org's [cs6620 fork](https://github.com/sast-sentinel-scanner/cs6620) |
 | GitHub App registration | registered under `sast-sentinel-scanner` GitHub org |
-| End-to-end PR test against a real repo | **not yet performed** |
+| End-to-end PR test against a real repo | performed, tested on `sast-sentinel-scanner` GitHub org's [cs6620 fork](https://github.com/sast-sentinel-scanner/cs6620) |
 
 ## Notes on the deployment account
 
