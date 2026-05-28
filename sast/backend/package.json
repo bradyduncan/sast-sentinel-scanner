@@ -8,8 +8,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "scan": "node cli.js",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --pool=threads",
+    "test:watch": "vitest --pool=threads"
   },
   "keywords": [
     "sast",

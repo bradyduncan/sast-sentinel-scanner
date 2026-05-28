@@ -1,0 +1,10 @@
+{
+  "job_id": "test-job-1",
+  "repo": {
+    "owner": "anthropics",
+    "name": "claude-code"
+  },
+  "pr_number": 42,
+  "commit_sha": "abc1234567890abcdef1234567890abcdef12345",
+  "installation_id": 12345
+}
