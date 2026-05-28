@@ -57,3 +57,18 @@ output "high_severity_topic_arn" {
   description = "ARN of the SNS topic published to on HIGH-severity scan results."
   value       = aws_sns_topic.high_severity.arn
 }
+
+output "state_machine_arn" {
+  description = "ARN of the Step Functions pipeline state machine."
+  value       = aws_sfn_state_machine.pipeline.arn
+}
+
+output "fetch_code_function_arn" {
+  description = "ARN of the fetch-code Lambda."
+  value       = aws_lambda_function.fetch_code.arn
+}
+
+output "post_comment_function_arn" {
+  description = "ARN of the post-comment Lambda."
+  value       = aws_lambda_function.post_comment.arn
+}

@@ -15,3 +15,10 @@ variable "alert_email" {
   type        = string
   default     = ""
 }
+
+variable "github_app_id" {
+  description = "GitHub App numeric ID. Set out-of-band once the App is registered on github.com (terraform apply -var=github_app_id=12345)."
+  type        = string
+  default     = ""
+}
+
