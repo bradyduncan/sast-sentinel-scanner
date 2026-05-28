@@ -4,6 +4,12 @@ A GitHub App that scans pull requests for security vulnerabilities and posts fin
 
 Course project for CS6620. Built on top of a regex-based SAST scanner originally from <https://github.com/aanchan/cs6620>.
 
+## Example PR comment
+
+When the App is installed on a repo and a PR is opened, the scanner posts a markdown comment listing findings:
+
+![Example PR comment with 6 findings — 4 HIGH, 2 MEDIUM](docs/screenshots/pr-comment.png)
+
 ## Architecture
 
 Webhook arrives at API Gateway, a Lambda validates the GitHub HMAC signature and writes a job to DynamoDB, Step Functions orchestrates Fetch → Scan → Comment with retry/error branches, the scanner runs as a one-shot Fargate task, results land in S3, and a final Lambda posts the markdown comment. HIGH-severity findings additionally fan out to SNS for email alerts.
