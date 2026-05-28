@@ -10,6 +10,7 @@
 // Returns the same execution context untouched (Step Functions ResultPath=null).
 
 import { App } from "@octokit/app";
+import { Octokit } from "@octokit/rest";
 import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
@@ -61,6 +62,7 @@ async function getGitHubApp() {
   cachedApp = appFactory({
     appId: process.env.GITHUB_APP_ID,
     privateKey: cachedPrivateKey,
+    Octokit,
   });
   return cachedApp;
 }

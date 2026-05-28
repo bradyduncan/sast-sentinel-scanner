@@ -4,6 +4,12 @@ A GitHub App that scans pull requests for security vulnerabilities and posts fin
 
 Course project for CS6620. Built on top of a regex-based SAST scanner originally from <https://github.com/aanchan/cs6620>.
 
+## Example PR comment
+
+When the App is installed on a repo and a PR is opened, the scanner posts a markdown comment listing findings:
+
+![Example PR comment with 6 findings — 4 HIGH, 2 MEDIUM](docs/screenshots/pr-comment.png)
+
 ## Architecture
 
 Webhook arrives at API Gateway, a Lambda validates the GitHub HMAC signature and writes a job to DynamoDB, Step Functions orchestrates Fetch → Scan → Comment with retry/error branches, the scanner runs as a one-shot Fargate task, results land in S3, and a final Lambda posts the markdown comment. HIGH-severity findings additionally fan out to SNS for email alerts.
@@ -53,14 +59,23 @@ terraform init
 terraform apply
 terraform output  # copy state_bucket / lock_table / region into envs/dev/backend.tf
 
-# 2. Deploy the dev environment.
-cd ../envs/dev
+# 2. Install Lambda runtime dependencies so they're bundled into the deploy zip.
+#    fetch-code and post-comment need @octokit/rest, @octokit/app, and tar at
+#    runtime; only the AWS SDK is preinstalled in the Lambda runtime.
+cd ../../lambda/fetch-code && npm install --omit=dev
+cd ../post-comment && npm install --omit=dev
+
+# 3. Deploy the dev environment.
+cd ../../infrastructure/envs/dev
 terraform init
 terraform apply
 
-# 3. Build and push the scanner image.
+# 4. Build and push the scanner image.
+#    --platform linux/amd64 is required: Fargate runs amd64 containers,
+#    but `docker build` defaults to your host's CPU architecture
+#    (linux/arm64 on Apple Silicon and Windows-on-ARM), which Fargate cannot pull.
 cd ../../..
-docker build -f docker/Dockerfile -t sast-scanner:dev sast/backend
+docker build --platform linux/amd64 -f docker/Dockerfile -t sast-scanner:dev sast/backend
 aws ecr get-login-password --region us-east-1 \
   | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com
 docker tag sast-scanner:dev <account>.dkr.ecr.us-east-1.amazonaws.com/sast-sentinel-scanner:latest
@@ -115,16 +130,19 @@ The scanner runs end-to-end without Step Functions by manually invoking the task
 | Component | State |
 |---|---|
 | Terraform remote state backend | deployed |
-| DynamoDB jobs table | deployed |
+| DynamoDB jobs table (+ delivery-id GSI) | deployed |
 | S3 staging + results buckets | deployed |
 | ECR scanner repo + image | deployed |
-| Secrets Manager placeholders | deployed |
+| Secrets Manager (webhook secret + GitHub App private key) | deployed, populated |
 | Smoke Lambda + API Gateway | deployed |
 | Fargate cluster + task definition | deployed, smoke-tested end-to-end |
-| Step Functions state machine | not started |
-| Real webhook-receiver / fetch-code / post-comment Lambdas | not deployed |
-| SNS topic + email alert | not started |
-| GitHub App registration | not started |
+| Step Functions state machine | deployed |
+| fetch-code Lambda | deployed |
+| post-comment Lambda | deployed |
+| SNS topic + email alert | deployed |
+| webhook-receiver Lambda + `POST /webhook` route | deployed, tested on `sast-sentinel-scanner` GitHub org's [cs6620 fork](https://github.com/sast-sentinel-scanner/cs6620) |
+| GitHub App registration | registered under `sast-sentinel-scanner` GitHub org |
+| End-to-end PR test against a real repo | performed, tested on `sast-sentinel-scanner` GitHub org's [cs6620 fork](https://github.com/sast-sentinel-scanner/cs6620) |
 
 ## Notes on the deployment account
 

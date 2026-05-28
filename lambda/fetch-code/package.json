@@ -13,6 +13,7 @@
     "@aws-sdk/client-secrets-manager": "^3.600.0",
     "@aws-sdk/util-dynamodb": "^3.600.0",
     "@octokit/app": "^15.1.0",
+    "@octokit/rest": "^22.0.1",
     "tar": "^7.4.0"
   },
   "devDependencies": {
