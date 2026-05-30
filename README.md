@@ -6,9 +6,26 @@ Course project for CS6620. Built on top of a regex-based SAST scanner originally
 
 ## Example PR comment
 
-When the App is installed on a repo and a PR is opened, the scanner posts a markdown comment listing findings:
+When the App is installed on a repo and a PR is opened, a comment is posted listing findings, such as:
 
 ![Example PR comment with 6 findings — 4 HIGH, 2 MEDIUM](docs/screenshots/pr-comment.png)
+
+## Example failure comment
+
+When the scan pipeline fails, after Step Functions retries are exhausted, a failure comment is posted on the PR and publishes an alert to the `sast-sentinel-failures` SNS topic, such as:
+
+![Example failure comment](docs/screenshots/failure-comment.png)
+
+The Step Functions retry each Task up to 3 times with exponential backoff (5s, 10s, 20s) before treating the job as failed.
+
+The failure types covered are:
+- DynamoDB read errors: e.g. `States.TaskFailed` This is applied to ReadJobSummary.
+- Fargate task launch / runtime errors: e.g. `ECS.AmazonECSException`, `States.TaskFailed` These are applied to RunScanner.
+- Transient Lambda invocation errors: e.g. `Lambda.AWSLambdaException`, `Lambda.SdkClientException`, `Lambda.ServiceException`, `Lambda.TooManyRequestsException`. These are applied to FetchCode, PostComment, PostFailureComment.
+
+If not mentioned in the failure types, the job goes straight to `FAILED` (no retries) and a failure comment is posted.
+
+The retry/alert behavior is documented in [docs/architecture.md § Retries & failure alerts](docs/architecture.md#retries--failure-alerts).
 
 ## Architecture
 

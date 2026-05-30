@@ -62,6 +62,17 @@ resource "aws_sfn_state_machine" "pipeline" {
           "Payload.$"  = "$"
         }
         ResultPath = null
+        Retry = [{
+          ErrorEquals = [
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.ServiceException",
+            "Lambda.TooManyRequestsException",
+          ]
+          IntervalSeconds = 5
+          MaxAttempts     = 3
+          BackoffRate     = 2.0
+        }]
         Catch = [{
           ErrorEquals = ["States.ALL"]
           ResultPath  = "$.error"
@@ -100,6 +111,12 @@ resource "aws_sfn_state_machine" "pipeline" {
           }
         }
         ResultPath = null
+        Retry = [{
+          ErrorEquals     = ["ECS.AmazonECSException", "States.TaskFailed"]
+          IntervalSeconds = 5
+          MaxAttempts     = 3
+          BackoffRate     = 2.0
+        }]
         Catch = [{
           ErrorEquals = ["States.ALL"]
           ResultPath  = "$.error"
@@ -119,6 +136,12 @@ resource "aws_sfn_state_machine" "pipeline" {
           }
         }
         ResultPath = "$.job"
+        Retry = [{
+          ErrorEquals     = ["States.TaskFailed"]
+          IntervalSeconds = 5
+          MaxAttempts     = 3
+          BackoffRate     = 2.0
+        }]
         Catch = [{
           ErrorEquals = ["States.ALL"]
           ResultPath  = "$.error"
@@ -170,7 +193,18 @@ resource "aws_sfn_state_machine" "pipeline" {
           "Payload.$"  = "$"
         }
         ResultPath = null
-        Next       = "Success"
+        Retry = [{
+          ErrorEquals = [
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.ServiceException",
+            "Lambda.TooManyRequestsException",
+          ]
+          IntervalSeconds = 5
+          MaxAttempts     = 3
+          BackoffRate     = 2.0
+        }]
+        Next = "Success"
       }
 
       Success = { Type = "Succeed" }
@@ -196,6 +230,19 @@ resource "aws_sfn_state_machine" "pipeline" {
           }
         }
         ResultPath = null
+        Next       = "NotifyFailure"
+      }
+
+      # ---- SNS alert on final failure (after retries exhausted) ----
+      NotifyFailure = {
+        Type     = "Task"
+        Resource = "arn:aws:states:::sns:publish"
+        Parameters = {
+          TopicArn    = aws_sns_topic.failures.arn
+          Subject     = "SAST Sentinel scan failed"
+          "Message.$" = "States.Format('Job {} failed for {}/{} PR #{}. Error: {}', $.job_id, $.repo.owner, $.repo.name, $.pr_number, $.error.Cause)"
+        }
+        ResultPath = null
         Next       = "PostFailureComment"
       }
 
@@ -208,7 +255,18 @@ resource "aws_sfn_state_machine" "pipeline" {
           "Payload.$"  = "$"
         }
         ResultPath = null
-        Next       = "FailTerminal"
+        Retry = [{
+          ErrorEquals = [
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.ServiceException",
+            "Lambda.TooManyRequestsException",
+          ]
+          IntervalSeconds = 5
+          MaxAttempts     = 3
+          BackoffRate     = 2.0
+        }]
+        Next = "FailTerminal"
       }
 
       FailTerminal = { Type = "Fail" }
