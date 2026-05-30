@@ -2,7 +2,7 @@
 
 ## DynamoDB: `jobs` table
 
-**Table name:** `sast-jobs`
+**Table name:** `sast-sentinel-jobs`
 **Billing mode:** `PAY_PER_REQUEST` (on-demand)
 **TTL attribute:** `expires_at` (Unix epoch seconds; set ~30 days from `created_at`)
 
