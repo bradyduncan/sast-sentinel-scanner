@@ -13,3 +13,17 @@ resource "aws_sns_topic_subscription" "high_severity_email" {
   protocol  = "email"
   endpoint  = var.alert_email
 }
+
+# SNS topic for final pipeline failures, after Step Functions retries have been exhausted.
+# Refering to the NotifyFailure state in stepfunctions.tf
+
+resource "aws_sns_topic" "failures" {
+  name = "${var.project_name}-failures"
+}
+
+resource "aws_sns_topic_subscription" "failures_email" {
+  count     = var.alert_email == "" ? 0 : 1
+  topic_arn = aws_sns_topic.failures.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
