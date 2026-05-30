@@ -14,3 +14,18 @@ _TODO: drop the architecture diagram image here and add a paragraph-per-componen
 - **SNS + Email** — fires when scan finds HIGH-severity vulnerabilities.
 - **Secrets Manager** — holds GitHub App private key + webhook HMAC secret.
 - **CloudWatch** — logs from Lambda, Step Functions, Fargate, API Gateway.
+
+## IAM design
+
+The pipeline is designed around four least-privilege IAM roles. However, in the production environment, every component uses the lab-provided `LabRole` because AWS Academy Learner Lab restricts `iam:CreateRole`. 
+
+The intended design lives in [`infrastructure/modules/iam/main.tf`](../infrastructure/modules/iam/main.tf) for reference. This module is not instantiated in the deployed infrastructure due to the mentioned IAM restrictions.
+
+| Role | Components | Permissions |
+|---|---|---|
+| `lambda_exec` (shared) | webhook-receiver, fetch-code, post-comment, get-status | CloudWatch Logs; DynamoDB `GetItem`/`PutItem`/`UpdateItem`/`Query` on jobs table + GSI; S3 Get/Put on staging + results; Secrets Manager `GetSecretValue` on App key + webhook secret; Step Functions `StartExecution` |
+| `fargate_task` | scanner container (application role) | S3 `GetObject` from staging; S3 `PutObject` to results; DynamoDB `GetItem`/`UpdateItem` on jobs |
+| `fargate_task_exec` | scanner container (ECS agent role) | `AmazonECSTaskExecutionRolePolicy` (managed) — ECR pull + CloudWatch Logs |
+| `step_functions` | state machine | Lambda `InvokeFunction`; ECS `RunTask`/`StopTask`/`DescribeTasks`; `iam:PassRole` on Fargate roles; EventBridge rule management for `ecs:runTask.sync`; DynamoDB `GetItem`/`UpdateItem`; SNS `Publish` on high-severity topic |
+
+In Learner Lab, all four are collapsed into `LabRole`, which provides a broader set of permissions sufficient to cover the component's needs.
