@@ -99,3 +99,35 @@ terraform apply
 ```
 
 This is why the NAT-bound default route is defined as a separate `aws_route` resource rather than inline in `aws_route_table.private`. It lets the route be destroyed alongside the NAT without tearing down the route table.
+
+## Monitoring
+
+The pipeline emits compute and orchestration metrics to CloudWatch from two sources:
+
+| Source | Measured | Where it's enabled |
+|---|---|---|
+| **ECS Container Insights** | Per-task CPU, memory, network, storage for every scanner Fargate task | `containerInsights = "enabled"` on `aws_ecs_cluster.sast` in [`fargate.tf`](../infrastructure/envs/dev/fargate.tf) |
+| **AWS Step Functions native metrics** | Execution count by status, end-to-end pipeline duration | Always-on for any state machine; no config needed |
+
+### CloudWatch dashboard
+
+[`monitoring.tf`](../infrastructure/envs/dev/monitoring.tf) defines an `aws_cloudwatch_dashboard.pipeline` with four widgets:
+
+| Position | Widget | Metric |
+|---|---|---|
+| Top-left | Scanner Fargate CPU utilization | `ECS/ContainerInsights / CpuUtilized` (CPU units; 1024 = 1 vCPU) |
+| Top-right | Scanner Fargate memory utilization | `ECS/ContainerInsights / MemoryUtilized` (MiB) |
+| Bottom-left | Step Functions executions by status | `AWS/States / ExecutionsSucceeded`, `ExecutionsFailed`, `ExecutionsStarted` |
+| Bottom-right | Step Functions execution duration (proxy for end-to-end scan latency) | `AWS/States / ExecutionTime` (ms) |
+
+The dashboard URL is published as a Terraform output (`dashboard_url`).
+
+### Learner Lab caveat
+
+AWS Academy Learner Lab attaches an `voc-cancel-cred` IAM policy that **explicitly denies `cloudwatch:GetDashboard`**, so the dashboard cannot be opened by Learner Lab students. Terraform still creates the dashboard correctly — in any non-Lab AWS account it renders without issue. 
+
+While in Lab, we can view the same metrics directly via **CloudWatch → Metrics** → `ECS/ContainerInsights` and `AWS/States` namespaces (those reads are not blocked).
+
+### Notes on resource utilization
+
+The scanner is short-lived (~20–30 seconds per scan). Container Insights samples at 1-minute granularity, so very fast scans can show near-zero CPU averages.
