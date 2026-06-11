@@ -55,3 +55,47 @@ The failure path:
 4. **`FailTerminal`** — terminal `Fail` state.
 
 **No alerts fire during retries themselves** — only on final failure after all retries are exhausted. This avoids noisy alerts during normal transient hiccups while ensuring real failures notify subscribers.
+
+## Networking
+
+The Fargate scanner task runs in a **private subnet** with no public IP. Outbound traffic to AWS service endpoints (ECR for image pull, S3 for staging + results, DynamoDB for job state, CloudWatch for logs) is routed through a **NAT Gateway** that lives in a public subnet.
+
+```
+VPC 10.0.0.0/16
+├── Public subnets   (10.0.0.0/24, 10.0.1.0/24)   across 2 AZs
+│   └── NAT Gateway in public[0]
+├── Private subnets                               across 2 AZs
+│   └── Fargate task placed here (ECS picks an AZ at runtime)
+├── Internet Gateway (default route for public subnets)
+└── Route tables
+    ├── public-rt:  0.0.0.0/0 → IGW
+    └── private-rt: 0.0.0.0/0 → NAT Gateway
+```
+
+| Item | Where it's wired |
+|---|---|
+| VPC + subnets + IGW + NAT + route tables + Fargate SG | [`vpc.tf`](../infrastructure/envs/dev/vpc.tf) |
+| Fargate task network config | [`stepfunctions.tf`](../infrastructure/envs/dev/stepfunctions.tf) — `Subnets = aws_subnet.private[*].id`, `SecurityGroups = [aws_security_group.fargate.id]`, `AssignPublicIp = "DISABLED"` |
+| Outbound rule | `aws_security_group.fargate` allows TCP 443 to `0.0.0.0/0` (NAT then routes to the AWS service endpoints) |
+
+### Design choice of having only one NAT gateway
+
+**2 AZs:** if one AZ has an outage, ECS places the task in the other. 
+**A single NAT Gateway:**: a failure in the AZ hosting the NAT would isolate Fargate even though there's a healthy private subnet in the other AZ.
+
+For production, the standard pattern is one NAT per AZ (each private subnet routing to its same-AZ NAT). For the class scope and Learner Lab credit constraints, this architecture uses one NAT gateway.
+
+### Cost-saving destroy/recreate
+
+To avoid idle AWS costs, between testing sessions the NAT and its Elastic IP can be destroyed independently:
+
+```sh
+terraform destroy \
+  -target=aws_route.private_nat \
+  -target=aws_nat_gateway.main \
+  -target=aws_eip.nat
+# ...later, to bring it back:
+terraform apply
+```
+
+This is why the NAT-bound default route is defined as a separate `aws_route` resource rather than inline in `aws_route_table.private`. It lets the route be destroyed alongside the NAT without tearing down the route table.
