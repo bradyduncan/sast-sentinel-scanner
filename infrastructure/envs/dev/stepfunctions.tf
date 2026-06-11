@@ -9,26 +9,8 @@
 # Lambdas are deployed. Real wiring swaps them to Task / Lambda Invoke
 # without touching the rest of the machine.
 #
-# Network configuration uses the default VPC; replace with a dedicated
-# VPC + subnets when Person 2's networking module ships.
-
-# ---- Default VPC / subnets / SG lookup ----
-
-data "aws_vpc" "default" {
-  default = true
-}
-
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
-data "aws_security_group" "default" {
-  name   = "default"
-  vpc_id = data.aws_vpc.default.id
-}
+# Networking: Fargate runs in the private subnets defined in vpc.tf,
+# with outbound to AWS APIs via the NAT Gateway.
 
 # ---- Log group for state machine executions ----
 
@@ -91,9 +73,9 @@ resource "aws_sfn_state_machine" "pipeline" {
           LaunchType     = "FARGATE"
           NetworkConfiguration = {
             AwsvpcConfiguration = {
-              Subnets        = data.aws_subnets.default.ids
-              SecurityGroups = [data.aws_security_group.default.id]
-              AssignPublicIp = "ENABLED"
+              Subnets        = aws_subnet.private[*].id
+              SecurityGroups = [aws_security_group.fargate.id]
+              AssignPublicIp = "DISABLED"
             }
           }
           Overrides = {
