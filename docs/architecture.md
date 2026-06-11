@@ -56,6 +56,18 @@ The failure path:
 
 **No alerts fire during retries themselves** — only on final failure after all retries are exhausted. This avoids noisy alerts during normal transient hiccups while ensuring real failures notify subscribers.
 
+### Stuck-job reaper
+
+Step Functions retries cover the cases where a Task fails. They don't cover a different failure mode: a job that *enters* a non-terminal state (`PENDING`, `FETCHING`, `SCANNING`, `COMMENTING`) but the orchestrator process dies before it can transition out — for example, Step Functions crashes mid-execution, a Lambda is killed without writing its terminal status, or a Fargate task hangs past its timeout without surfacing an error.
+
+A separate `stuck-job-reaper` Lambda handles this. Defined in [`lambda_stuck_job_reaper.tf`](../infrastructure/envs/dev/lambda_stuck_job_reaper.tf):
+
+- **Schedule**: invoked hourly via an EventBridge `rate(1 hour)` rule.
+- **Logic**: scans the jobs table with a `FilterExpression` on `status IN (PENDING, FETCHING, SCANNING, COMMENTING) AND updated_at < (now − STUCK_THRESHOLD_HOURS)`. Threshold defaults to 1 hour and is overridable via env var.
+- **Action**: for each stuck job, sets `status = FAILED` with `error = "stuck-job-reaper: job stuck in <prev> past threshold"`, then publishes a single SNS alert summarizing the batch to the existing `sast-sentinel-failures` topic.
+
+This gives the pipeline a self-healing floor: even if a future bug or AWS outage leaves jobs orphaned in non-terminal states, they get reaped and surfaced within an hour rather than staying as silent failures.
+
 ## Networking
 
 The Fargate scanner task runs in a **private subnet** with no public IP. Outbound traffic to AWS service endpoints (ECR for image pull, S3 for staging + results, DynamoDB for job state, CloudWatch for logs) is routed through a **NAT Gateway** that lives in a public subnet.
