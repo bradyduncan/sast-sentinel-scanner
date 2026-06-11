@@ -1,0 +1,19 @@
+{
+  "name": "stuck-job-reaper",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run --pool=threads",
+    "test:watch": "vitest --pool=threads"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/client-sns": "^3.600.0",
+    "@aws-sdk/util-dynamodb": "^3.600.0"
+  },
+  "devDependencies": {
+    "aws-sdk-client-mock": "^4.1.0",
+    "vitest": "^2.1.0"
+  }
+}
