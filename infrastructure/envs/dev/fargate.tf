@@ -3,6 +3,14 @@
 
 resource "aws_ecs_cluster" "sast" {
   name = var.project_name
+
+  # Container Insights surfaces CPU, memory, network, and storage metrics
+  # for every task in the cluster. Visible in the CloudWatch dashboard
+  # defined in monitoring.tf.
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_cloudwatch_log_group" "scanner" {
